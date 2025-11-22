@@ -72,6 +72,10 @@ class VoucherValidator
                 return VoucherValidationResult::invalid('Voucher is paused.');
             }
 
+            if ($voucher->status === VoucherStatus::Expired) {
+                return VoucherValidationResult::invalid('Voucher has expired.');
+            }
+
             if ($voucher->status === VoucherStatus::Depleted) {
                 return VoucherValidationResult::invalid('Voucher usage limit has been reached.');
             }
