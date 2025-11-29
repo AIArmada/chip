@@ -53,6 +53,9 @@ abstract class TestCase extends Orchestra
             \AIArmada\Vouchers\VoucherServiceProvider::class,
             \AIArmada\FilamentCart\FilamentCartServiceProvider::class,
             \AIArmada\FilamentChip\FilamentChipServiceProvider::class,
+            \AIArmada\FilamentVouchers\FilamentVouchersServiceProvider::class,
+            \AIArmada\Affiliates\AffiliatesServiceProvider::class,
+            \AIArmada\FilamentAffiliates\FilamentAffiliatesServiceProvider::class,
             TestPanelProvider::class,
         ];
     }
@@ -139,6 +142,7 @@ abstract class TestCase extends Orchestra
     {
         $this->loadMigrationsFrom(__DIR__.'/../../packages/chip/database/migrations');
         $this->loadMigrationsFrom(__DIR__.'/../../packages/vouchers/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../packages/affiliates/database/migrations');
     }
 
     protected function setUpDatabase(): void
