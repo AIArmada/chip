@@ -11,7 +11,6 @@ use AIArmada\Chip\Models\Purchase;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 /**
  * Store CHIP webhook data in the database.
@@ -23,13 +22,13 @@ final class StoreWebhookData
 {
     public function handle(WebhookReceived $event): void
     {
-        if (! config('chip.webhooks.store_data', true)) {
+        if (! config('chip.webhooks.store_webhooks', true)) {
             return;
         }
 
         if ((bool) config('chip.owner.enabled', false) && OwnerContext::resolve() === null) {
             Log::channel(config('chip.logging.channel', 'stack'))
-                ->warning('CHIP webhook store_data skipped because owner context is missing while owner scoping is enabled', [
+                ->warning('CHIP webhook store_webhooks skipped because owner context is missing while owner scoping is enabled', [
                     'event_type' => $event->eventType,
                     'id' => $event->payload['id'] ?? null,
                     'brand_id' => $event->payload['brand_id'] ?? null,
@@ -58,6 +57,9 @@ final class StoreWebhookData
 
     /**
      * @param  array<string, mixed>  $payload
+     *
+     * CHIP guarantees purchase IDs are globally unique UUIDs across brands/tenants.
+     * We therefore upsert purchases by `id` only and then apply owner attribution.
      */
     private function storePurchase(array $payload): void
     {
@@ -111,7 +113,7 @@ final class StoreWebhookData
                 'order_id' => $payload['order_id'] ?? null,
 
                 // Refund
-                'refund_availability' => $payload['refund_availability'] ?? null,
+                'refund_availability' => $payload['refund_availability'] ?? 'all',
                 'refundable_amount' => $payload['refundable_amount'] ?? 0,
 
                 // URLs
@@ -208,11 +210,21 @@ final class StoreWebhookData
             return;
         }
 
-        // Payment object in webhook has no ID, generate one
-        $paymentId = (string) Str::uuid();
+        $paymentMatch = [
+            'purchase_id' => $payload['id'],
+            'payment_type' => $paymentData['payment_type'] ?? 'purchase',
+            'amount' => $paymentData['amount'],
+            'currency' => $paymentData['currency'],
+            'is_outgoing' => $paymentData['is_outgoing'] ?? false,
+        ];
+
+        if ($owner !== null) {
+            $paymentMatch['owner_type'] = $owner->getMorphClass();
+            $paymentMatch['owner_id'] = (string) $owner->getKey();
+        }
 
         $payment = Payment::updateOrCreate(
-            ['id' => $paymentId],
+            $paymentMatch,
             [
                 'purchase_id' => $payload['id'],
                 'payment_type' => $paymentData['payment_type'] ?? null,

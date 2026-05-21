@@ -11,7 +11,7 @@ The `config/chip.php` file contains all package settings organized by concern.
 ```php
 'database' => [
     'table_prefix' => env('CHIP_TABLE_PREFIX', 'chip_'),
-    'json_column_type' => env('CHIP_JSON_COLUMN_TYPE', 'json'),
+    'json_column_type' => env('CHIP_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
 ],
 ```
 
@@ -86,17 +86,70 @@ Available methods: `fpx`, `visa`, `mastercard`, `maestro`, `duitnow`, `grabpay`,
 | Key | Description |
 |-----|-------------|
 | `enabled` | Enable owner-scoped queries |
-| `include_global` | Include `owner_id = null` records in queries |
+| `include_global` | Include global records where `owner_type` and `owner_id` are `null` |
 | `auto_assign_on_create` | Automatically set owner on new records |
-| `webhook_brand_id_map` | Map brand IDs to owner models for webhooks |
+| `webhook_brand_id_map` | Map brand IDs to owner models for incoming webhooks |
 
-Example brand ID mapping:
+### Webhook Brand ID Mapping
+
+When owner scoping is enabled, incoming CHIP webhooks must be mapped to the correct tenant (owner). The `webhook_brand_id_map` configuration associates CHIP brand IDs with your tenant models.
+
+**Why it's needed:**
+- CHIP webhooks arrive without tenant/request context
+- The brand ID in the webhook payload is the only way to identify which tenant owns the payment
+- Webhooks are fail-closed: if a brand ID cannot be mapped to an owner, the webhook is rejected
+
+**Configuration:**
 ```php
 'webhook_brand_id_map' => [
-    'brand-uuid-1' => \App\Models\Tenant::class . ':tenant-uuid-1',
-    'brand-uuid-2' => \App\Models\Tenant::class . ':tenant-uuid-2',
+    'brand-uuid-1' => [
+        'owner_type' => \App\Models\Tenant::class,
+        'owner_id' => 'tenant-uuid-1',
+    ],
+    'brand-uuid-2' => [
+        'owner_type' => \App\Models\Organization::class,
+        'owner_id' => 'org-uuid-2',
+    ],
 ],
 ```
+
+**Fields (preferred):**
+- `owner_type`: Full class name or morph alias of the owner model (e.g., `\App\Models\Tenant::class` or `'tenant'` if using `morphMap`)
+- `owner_id`: ID of the owner record in your database (string or integer)
+
+**Legacy aliases (also accepted):**
+- `type` (alias for `owner_type`)
+- `id` (alias for `owner_id`)
+
+For forward compatibility, prefer `owner_type`/`owner_id`.
+
+**Environment-based mapping:**
+```php
+'webhook_brand_id_map' => array_filter([
+    env('CHIP_BRAND_ID_STAGING') => [
+        'owner_type' => \App\Models\Tenant::class,
+        'owner_id' => env('TENANT_ID_STAGING'),
+    ],
+    env('CHIP_BRAND_ID_PRODUCTION') => [
+        'owner_type' => \App\Models\Tenant::class,
+        'owner_id' => env('TENANT_ID_PRODUCTION'),
+    ],
+]),
+```
+
+**Validation:**
+The configuration is validated at boot time when owner scoping is enabled. Invalid mappings will raise `InvalidArgumentException`:
+- Missing `owner_type` or `owner_id`
+- Non-string `owner_type`
+- Non-string/non-integer `owner_id`
+
+**Troubleshooting:**
+If webhooks are failing with "Owner resolution failed", check:
+1. Does your CHIP brand ID appear in the map?
+2. Does the mapped `owner_id` exist in your database?
+3. Is `owner_type` the correct morph alias or class name?
+
+See [Webhooks](webhooks.md) for detailed webhook handling.
 
 ## Integrations
 
@@ -106,8 +159,8 @@ Example brand ID mapping:
         'enabled' => env('CHIP_DOCS_INTEGRATION_ENABLED', true),
         'auto_generate_invoice' => env('CHIP_DOCS_AUTO_INVOICE', true),
         'auto_generate_credit_note' => env('CHIP_DOCS_AUTO_CREDIT_NOTE', true),
-        'paid_doc_type' => 'invoice',
-        'refund_doc_type' => 'credit_note',
+        'paid_doc_type' => env('CHIP_DOCS_PAID_TYPE', 'invoice'),
+        'refund_doc_type' => env('CHIP_DOCS_REFUND_TYPE', 'credit_note'),
         'generate_pdf' => env('CHIP_DOCS_GENERATE_PDF', true),
     ],
 ],
@@ -145,7 +198,8 @@ When the `aiarmada/docs` package is installed, CHIP can automatically generate:
     'webhook_keys' => $webhookKeys, // Parsed from CHIP_WEBHOOK_PUBLIC_KEYS JSON
     'verify_signature' => env('CHIP_WEBHOOK_VERIFY_SIGNATURE', true),
     'log_payloads' => env('CHIP_WEBHOOK_LOG_PAYLOADS', false),
-    'store_data' => env('CHIP_WEBHOOK_STORE_DATA', true),
+    'store_webhooks' => env('CHIP_WEBHOOK_STORE', true),
+    'deduplication' => env('CHIP_WEBHOOK_DEDUPLICATION', true),
 ],
 ```
 

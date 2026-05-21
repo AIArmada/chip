@@ -42,7 +42,6 @@ The package creates the following tables (with configurable prefix):
 - `chip_send_limits` - Payout limits
 - `chip_send_webhooks` - Send webhook records
 - `chip_company_statements` - Settlement statements
-- `chip_daily_metrics` - Pre-aggregated analytics
 
 ## Environment Variables
 
@@ -139,6 +138,28 @@ This verifies:
 - Credential validity
 - Webhook configuration
 - Database tables
+
+## Multi-Tenant Setup
+
+import Aside from "@components/Aside.astro"
+
+<Aside variant="warning">
+  Owner scoping is **disabled by default** (`CHIP_OWNER_ENABLED=false`). In a multi-tenant deployment every tenant will see all CHIP purchases and payments unless you enable it. Set `CHIP_OWNER_ENABLED=true` and bind `OwnerResolverInterface` before going live.
+</Aside>
+
+```env
+CHIP_OWNER_ENABLED=true
+```
+
+Bind the resolver in `AppServiceProvider::register()`:
+
+```php
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+
+$this->app->bind(OwnerResolverInterface::class, CurrentTenantResolver::class);
+```
+
+See [Multitenancy](./05-multitenancy.md) for full details.
 
 ## Next Steps
 

@@ -7,7 +7,6 @@ namespace AIArmada\Chip\Services;
 use AIArmada\Chip\Data\DashboardMetrics;
 use AIArmada\Chip\Data\RevenueMetrics;
 use AIArmada\Chip\Data\TransactionMetrics;
-use AIArmada\Chip\Models\DailyMetric;
 use AIArmada\Chip\Models\Purchase;
 use Carbon\CarbonImmutable;
 
@@ -210,25 +209,5 @@ class LocalAnalyticsService
             'month' => $carbon->format('Y-m-01'),
             default => $carbon->format('Y-m-d'),
         };
-    }
-
-    /**
-     * Get metrics from pre-aggregated daily metrics table.
-     *
-     * @return array<int, DailyMetric>
-     */
-    public function getAggregatedMetrics(CarbonImmutable $startDate, CarbonImmutable $endDate, ?string $paymentMethod = null): array
-    {
-        $query = DailyMetric::query()
-            ->forOwner()
-            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()]);
-
-        if ($paymentMethod !== null) {
-            $query->where('payment_method', $paymentMethod);
-        } else {
-            $query->whereNull('payment_method'); // Get totals only
-        }
-
-        return $query->orderBy('date')->get()->all();
     }
 }
