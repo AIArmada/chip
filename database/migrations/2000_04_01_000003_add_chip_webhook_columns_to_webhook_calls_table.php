@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\CommerceSupport\SupportServiceProvider;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,8 +13,6 @@ return new class extends Migration
         if (! config('chip.webhooks.enabled', true)) {
             return;
         }
-
-        $this->createSharedWebhookCallsTableIfMissing();
 
         if (! Schema::hasTable('webhook_calls')) {
             return;
@@ -126,31 +123,5 @@ return new class extends Migration
         if (! Schema::hasIndex($table->getTable(), $name)) {
             $table->index($columns, $name);
         }
-    }
-
-    private function createSharedWebhookCallsTableIfMissing(): void
-    {
-        if (Schema::hasTable('webhook_calls')) {
-            return;
-        }
-
-        if (! class_exists(SupportServiceProvider::class)) {
-            return;
-        }
-
-        $providerFile = (new ReflectionClass(SupportServiceProvider::class))->getFileName();
-
-        if (! is_string($providerFile) || $providerFile === '') {
-            return;
-        }
-
-        $migrationPath = dirname($providerFile, 2) . '/database/migrations/1970_01_01_000004_create_webhook_calls_table.php.stub';
-
-        if (! is_file($migrationPath)) {
-            return;
-        }
-
-        $migration = require $migrationPath;
-        $migration->up();
     }
 };
