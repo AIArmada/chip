@@ -15,11 +15,7 @@ return new class extends Migration
         $table = (string) config('chip.database.table_prefix', 'chip_') . 'customers';
         $jsonType = (string) commerce_json_column_type('chip', 'jsonb');
 
-        if (Schema::hasTable($table)) {
-            return;
-        }
-
-        commerce_schema_create_if_missing($table, function (Blueprint $table) use ($jsonType): void {
+        Schema::create($table, function (Blueprint $table) use ($jsonType): void {
             $table->uuid('id')->primary();
             $table->uuidMorphs('subject');
             $table->nullableUuidMorphs('owner');
@@ -31,7 +27,7 @@ return new class extends Migration
         });
 
         if (ConnectionDriver::name(Schema::getConnection()) === 'pgsql' && $jsonType === 'jsonb') {
-            DB::statement("CREATE INDEX IF NOT EXISTS chip_customers_metadata_gin_index ON \"{$table}\" USING GIN (\"metadata\")");
+            DB::statement("CREATE INDEX chip_customers_metadata_gin_index ON \"{$table}\" USING GIN (\"metadata\")");
         }
     }
 };
