@@ -2,8 +2,6 @@
 title: Multitenancy
 ---
 
-import Aside from "@components/Aside.astro"
-
 # Multitenancy
 
 The CHIP package supports multi-tenant architectures using the `commerce-support` owner scoping system, allowing purchases and payments to be isolated by tenant (merchant, store, organisation).
@@ -24,9 +22,8 @@ The CHIP package supports multi-tenant architectures using the `commerce-support
 CHIP_OWNER_ENABLED=true
 ```
 
-<Aside variant="warning">
-  The default is `false` (single-tenant). Without enabling this, all tenants share the same CHIP purchase and payment records. Always set `CHIP_OWNER_ENABLED=true` in multi-tenant deployments.
-</Aside>
+> **warning**
+> The default is `false` (single-tenant). Without enabling this, all tenants share the same CHIP purchase and payment records. Always set `CHIP_OWNER_ENABLED=true` in multi-tenant deployments.
 
 ## Binding the Owner Resolver
 
@@ -94,6 +91,9 @@ $purchases = Purchase::forOwner($merchant)->get();
 $purchases = Purchase::forOwner($merchant, includeGlobal: true)->get();
 ```
 
+Note that `owner = null` rows are global rows, not "all owners". They are returned only when
+`include_global` is `true` (or via the `globalOnly()` scope).
+
 ## Background Commands
 
 Commands iterate all owners and process each in scope:
@@ -127,6 +127,7 @@ class RetryWebhooksCommand extends Command
 ```php
 use AIArmada\Chip\Models\Purchase;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 
 it('scopes chip purchases to owner', function () {
     config(['chip.owner.enabled' => true]);
@@ -140,7 +141,7 @@ it('scopes chip purchases to owner', function () {
     });
 
     foreach ([$merchantA, $merchantB] as $owner) {
-        (new Purchase)->forceFill([
+        OwnerContext::withOwner($owner, fn () => (new Purchase)->forceFill([
             'created_on' => time(),
             'updated_on' => time(),
             'client' => [],
@@ -151,7 +152,7 @@ it('scopes chip purchases to owner', function () {
             'status_history' => [],
             'owner_type' => $owner->getMorphClass(),
             'owner_id' => $owner->getKey(),
-        ])->save();
+        ])->save());
     }
 
     expect(Purchase::query()->count())->toBe(1);

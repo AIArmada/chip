@@ -111,9 +111,24 @@ Use the testing utilities:
 ```php
 use AIArmada\Chip\Testing\WebhookSimulator;
 
-// Simulate a paid purchase webhook
-WebhookSimulator::paid()->purchaseId($purchaseId)->dispatch();
+// Build a signed payload and POST it to the live route
+(new WebhookSimulator())
+    ->to(url('/chip/webhooks'))
+    ->purchaseId($purchaseId)
+    ->reference('ORD-001')
+    ->customer('customer@example.com', 'John Doe')
+    ->addProduct('Premium Plan', 9900)
+    ->fpx()
+    ->dispatch();
+
+// Or inspect the payload without sending it
+$purchase = (new WebhookSimulator())->toPurchase();
+$payload  = (new WebhookSimulator())->toWebhook();
 ```
+
+Inside a test, `use AIArmada\Chip\Testing\SimulatesWebhooks;` gives you
+`simulatePaidWebhook()`, `simulateFailedWebhook()`, `simulateCancelledWebhook()`,
+`simulateRefundedWebhook()`, and `simulateWebhookEvent(WebhookEventType $event)`.
 
 ## Health Check
 
