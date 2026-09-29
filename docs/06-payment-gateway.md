@@ -39,13 +39,10 @@ use AIArmada\CommerceSupport\Contracts\Payment\PaymentCustomerData;
 // Your custom order/invoice implementing CheckoutableInterface
 class Order implements CheckoutableInterface
 {
-    public function getCheckoutLineItems(): iterable { /* ... */ }
-    public function getCheckoutSubtotal(): Money { /* ... */ }
-    public function getCheckoutDiscount(): Money { /* ... */ }
-    public function getCheckoutTax(): Money { /* ... */ }
     public function getCheckoutTotal(): Money { /* ... */ }
     public function getCheckoutCurrency(): string { /* ... */ }
     public function getCheckoutReference(): string { /* ... */ }
+    public function getCheckoutLineItems(): array { /* ... */ }
     public function getCheckoutNotes(): ?string { /* ... */ }
     public function getCheckoutMetadata(): array { /* ... */ }
 }
@@ -65,10 +62,6 @@ $payment = $gateway->createPayment($order, $customer, [
 
 return redirect($payment->getCheckoutUrl());
 ```
-
-`PaymentCustomerData` is the ready-made `CustomerInterface` implementation shipped in
-`AIArmada\CommerceSupport\Contracts\Payment`; supply your own class to implement the interface
-directly.
 
 ## Cart Integration
 
@@ -129,7 +122,7 @@ $payment = $gateway->createPayment($cart, $customer, [
 ## Payment Intent
 
 ```php
-$payment->getPaymentId();    // 'pur_abc123'
+$payment->getId();           // 'pur_abc123'
 $payment->getStatus();       // PaymentStatus::PENDING
 $payment->getAmount();       // Money::MYR(9900)
 $payment->getCurrency();     // 'MYR'
@@ -158,13 +151,13 @@ $payment = $gateway->createPayment($cart, $customer, [
 ]);
 
 // 2. Capture later
-$gateway->capturePayment($payment->getPaymentId());
+$gateway->capturePayment($payment->getId());
 
 // Or partial capture
-$gateway->capturePayment($payment->getPaymentId(), Money::MYR(5000));
+$gateway->capturePayment($payment->getId(), Money::MYR(5000));
 
 // Or cancel
-$gateway->cancelPayment($payment->getPaymentId());
+$gateway->cancelPayment($payment->getId());
 ```
 
 ## Feature Support
@@ -188,7 +181,7 @@ try {
     $payment = $gateway->createPayment($cart, $customer, $options);
 } catch (PaymentGatewayException $e) {
     Log::error('Payment failed', [
-        'gateway' => $e->getGatewayName(),
+        'gateway' => $e->gatewayName,
         'message' => $e->getMessage(),
         'context' => $e->getContext(),
     ]);
@@ -218,5 +211,5 @@ public function checkout(PaymentGatewayInterface $gateway)
 
 ## Next Steps
 
-- [CHIP Collect](chip-collect.md) – Purchase operations
-- [Webhooks](webhooks.md) – Event handling
+- [CHIP Collect](07-chip-collect.md) – Purchase operations
+- [Webhooks](09-webhooks.md) – Event handling

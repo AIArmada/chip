@@ -44,8 +44,7 @@ $instruction = ChipSend::createSendInstruction(
 $instruction->id;       // integer
 $instruction->state;    // received, enquiring, executing, reviewing, accepted, completed, rejected, or deleted
 $instruction->amount;   // decimal string, for example '100.00'
-
-$instruction->getAmountInMinorUnits(); // exact integer minor units
+$instruction->amountMoney; // Money value in the configured Send currency
 ```
 
 The request maps to `POST /send/send_instructions` with `bank_account_id`, `amount`, `email`, `description`, `reference`, and the optional `send_recipient_receipt` field.
@@ -106,11 +105,10 @@ ChipSend::resendApprovalRequest(1);
 $limit->amount;      // major units
 $limit->fee;         // major units
 $limit->net_amount;  // major units
-$limit->currency;    // ISO 4217 code
+$limit->amountMoney; // exact minor-unit Money value
+$limit->feeMoney;    // exact minor-unit Money value
+$limit->netAmountMoney; // exact minor-unit Money value
 ```
-
-Use `AIArmada\CommerceSupport\Support\MoneyFormatter::formatMajor()` to display these, or
-`MoneyFormatter::majorToMinor()` to convert them to exact integer minor units.
 
 These map to `GET /send/send_limits/{id}`, `POST /send/send_limits`, `GET /send/send_limits`, and `POST /send/send_limits/{id}/resend_approval_requests`.
 

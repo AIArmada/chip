@@ -111,24 +111,9 @@ Use the testing utilities:
 ```php
 use AIArmada\Chip\Testing\WebhookSimulator;
 
-// Build a signed payload and POST it to the live route
-(new WebhookSimulator())
-    ->to(url('/chip/webhooks'))
-    ->purchaseId($purchaseId)
-    ->reference('ORD-001')
-    ->customer('customer@example.com', 'John Doe')
-    ->addProduct('Premium Plan', 9900)
-    ->fpx()
-    ->dispatch();
-
-// Or inspect the payload without sending it
-$purchase = (new WebhookSimulator())->toPurchase();
-$payload  = (new WebhookSimulator())->toWebhook();
+// Simulate a paid purchase webhook
+WebhookSimulator::paid()->purchaseId($purchaseId)->dispatch();
 ```
-
-Inside a test, `use AIArmada\Chip\Testing\SimulatesWebhooks;` gives you
-`simulatePaidWebhook()`, `simulateFailedWebhook()`, `simulateCancelledWebhook()`,
-`simulateRefundedWebhook()`, and `simulateWebhookEvent(WebhookEventType $event)`.
 
 ## Health Check
 
@@ -147,5 +132,5 @@ This verifies:
 ## Getting Help
 
 1. Check the [CHIP API Documentation](https://docs.chip-in.asia/)
-2. Review the [API Reference](api-reference.md)
+2. Review the [API Reference](10-api-reference.md)
 3. Enable debug logging to capture request/response details

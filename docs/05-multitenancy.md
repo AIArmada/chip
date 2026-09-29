@@ -2,6 +2,8 @@
 title: Multitenancy
 ---
 
+import Aside from "@components/Aside.astro"
+
 # Multitenancy
 
 The CHIP package supports multi-tenant architectures using the `commerce-support` owner scoping system, allowing purchases and payments to be isolated by tenant (merchant, store, organisation).
@@ -22,8 +24,9 @@ The CHIP package supports multi-tenant architectures using the `commerce-support
 CHIP_OWNER_ENABLED=true
 ```
 
-> **warning**
-> The default is `false` (single-tenant). Without enabling this, all tenants share the same CHIP purchase and payment records. Always set `CHIP_OWNER_ENABLED=true` in multi-tenant deployments.
+<Aside variant="warning">
+  The default is `false` (single-tenant). Without enabling this, all tenants share the same CHIP purchase and payment records. Always set `CHIP_OWNER_ENABLED=true` in multi-tenant deployments.
+</Aside>
 
 ## Binding the Owner Resolver
 
@@ -68,8 +71,8 @@ In multi-tenant setups where each tenant has their own CHIP Brand ID, map brand 
 'owner' => [
     'enabled' => true,
     'webhook_brand_id_map' => [
-        'brand-uuid-tenant-a' => ['type' => App\Models\Merchant::class, 'id' => 'merchant-a-uuid'],
-        'brand-uuid-tenant-b' => ['type' => App\Models\Merchant::class, 'id' => 'merchant-b-uuid'],
+        'brand-uuid-tenant-a' => ['owner_type' => App\Models\Merchant::class, 'owner_id' => 'merchant-a-uuid'],
+        'brand-uuid-tenant-b' => ['owner_type' => App\Models\Merchant::class, 'owner_id' => 'merchant-b-uuid'],
     ],
 ],
 ```
@@ -90,9 +93,6 @@ $purchases = Purchase::forOwner($merchant)->get();
 // Include global records
 $purchases = Purchase::forOwner($merchant, includeGlobal: true)->get();
 ```
-
-Note that `owner = null` rows are global rows, not "all owners". They are returned only when
-`include_global` is `true` (or via the `globalOnly()` scope).
 
 ## Background Commands
 
@@ -125,8 +125,8 @@ class RetryWebhooksCommand extends Command
 ## Testing
 
 ```php
-use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Chip\Models\Purchase;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 
 it('scopes chip purchases to owner', function () {
     config(['chip.owner.enabled' => true]);
@@ -139,8 +139,20 @@ it('scopes chip purchases to owner', function () {
         public function resolve(): ?\Illuminate\Database\Eloquent\Model { return $this->owner; }
     });
 
-    Purchase::factory()->create(['owner_type' => $merchantA->getMorphClass(), 'owner_id' => $merchantA->id]);
-    Purchase::factory()->create(['owner_type' => $merchantB->getMorphClass(), 'owner_id' => $merchantB->id]);
+    foreach ([$merchantA, $merchantB] as $owner) {
+        (new Purchase)->forceFill([
+            'created_on' => time(),
+            'updated_on' => time(),
+            'client' => [],
+            'purchase' => [],
+            'brand_id' => (string) \Illuminate\Support\Str::uuid(),
+            'issuer_details' => [],
+            'transaction_data' => [],
+            'status_history' => [],
+            'owner_type' => $owner->getMorphClass(),
+            'owner_id' => $owner->getKey(),
+        ])->save();
+    }
 
     expect(Purchase::query()->count())->toBe(1);
 });

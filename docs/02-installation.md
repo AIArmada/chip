@@ -42,6 +42,7 @@ The package creates the following tables (with configurable prefix):
 - `chip_send_limits` - Payout limits
 - `chip_send_webhooks` - Send webhook records
 - `chip_company_statements` - Settlement statements
+- `chip_customers` - Subject-to-CHIP customer links
 
 Incoming Collect webhook deliveries are now persisted on the shared `webhook_calls` table and updated in place with CHIP event metadata, idempotency keys, processing status, and owner tuple data when owner mode is enabled. Current versions do not create a separate `chip_webhooks` table.
 
@@ -145,8 +146,11 @@ This verifies:
 
 ## Multi-Tenant Setup
 
-> **warning**
-> Owner scoping is **disabled by default** (`CHIP_OWNER_ENABLED=false`). In a multi-tenant deployment every tenant will see all CHIP purchases and payments unless you enable it. Set `CHIP_OWNER_ENABLED=true` and bind `OwnerResolverInterface` before going live.
+import Aside from "@components/Aside.astro"
+
+<Aside variant="warning">
+  Owner scoping is **disabled by default** (`CHIP_OWNER_ENABLED=false`). In a multi-tenant deployment every tenant will see all CHIP purchases and payments unless you enable it. Set `CHIP_OWNER_ENABLED=true` and bind `OwnerResolverInterface` before going live.
+</Aside>
 
 ```env
 CHIP_OWNER_ENABLED=true
@@ -166,4 +170,4 @@ See [Multitenancy](./05-multitenancy.md) for full details.
 
 - [Configuration](03-configuration.md) - Customize package behavior
 - [Usage Guide](04-usage.md) - Create your first payment
-- [Webhooks](webhooks.md) - Handle payment events
+- [Webhooks](09-webhooks.md) - Handle payment events

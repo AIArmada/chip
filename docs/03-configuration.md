@@ -11,17 +11,12 @@ The `config/chip.php` file contains all package settings organized by concern.
 ```php
 'database' => [
     'table_prefix' => env('CHIP_TABLE_PREFIX', 'chip_'),
-    'json_column_type' => env('CHIP_JSON_COLUMN_TYPE', 'jsonb'),
 ],
 ```
 
 | Key | Description | Default |
 |-----|-------------|---------|
 | `table_prefix` | Prefix for all CHIP tables | `chip_` |
-| `json_column_type` | JSON column type for package JSON columns | `jsonb` |
-
-`commerce_json_column_type('chip')` resolves the column type from `CHIP_JSON_COLUMN_TYPE`, then
-`COMMERCE_JSON_COLUMN_TYPE`, then `chip.database.json_column_type`, defaulting to `jsonb`.
 
 ## Credentials / API
 
@@ -163,7 +158,7 @@ CHIP Send webhook payloads carry no brand attribution, so owner-enabled hosts co
 
 When owner scoping is enabled, Send deliveries are dispatched inside this owner context. If the tuple is missing or unresolvable, the delivery is rejected with "Owner resolution failed". The entry is validated at boot time like the brand map.
 
-See [Webhooks](webhooks.md) for detailed webhook handling.
+See [Webhooks](09-webhooks.md) for detailed webhook handling.
 
 ## Integration boundaries
 
@@ -203,9 +198,7 @@ CHIP does not configure or run document generation or checkout/customer linking.
     ],
 
     'send' => [
-        'webhook_id' => env('CHIP_SEND_WEBHOOK_ID'),
         'webhook_keys' => $sendWebhookKeys, // Parsed from CHIP_SEND_WEBHOOK_PUBLIC_KEYS JSON
-        'route' => env('CHIP_SEND_WEBHOOK_ROUTE', '/chip/send/webhooks'),
     ],
 ],
 ```
@@ -269,13 +262,13 @@ Sensitive data (emails, phone numbers, card numbers) is automatically masked in 
 ```env
 CHIP_ENVIRONMENT=sandbox
 CHIP_LOGGING_ENABLED=true
-CHIP_WEBHOOKS_VERIFY_SIGNATURE=false
+CHIP_WEBHOOK_VERIFY_SIGNATURE=false
 ```
 
 ### Production
 ```env
 CHIP_ENVIRONMENT=production
 CHIP_LOGGING_ENABLED=false
-CHIP_WEBHOOKS_VERIFY_SIGNATURE=true
+CHIP_WEBHOOK_VERIFY_SIGNATURE=true
 CHIP_WEBHOOK_LOG_PAYLOADS=false
 ```

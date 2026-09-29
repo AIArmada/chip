@@ -248,7 +248,7 @@ $result = app(DispatchChipWebhookAction::class)->execute(
     owner: $tenant, // optional — resolved from payload brand_id when omitted
 );
 
-if ($result->isHandled()) {
+if ($result->wasHandled()) {
     // Event was routed to a handler
 }
 ```
